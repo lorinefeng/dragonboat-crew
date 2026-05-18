@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dragonboat.dev/schemas/v0/local-event.schema.json",
+  "title": "DragonBoat Local Event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "event_id",
+    "run_id",
+    "seq",
+    "timestamp",
+    "type",
+    "actor",
+    "payload"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "dragonboat.event.v0"
+    },
+    "event_id": {
+      "type": "string",
+      "pattern": "^evt_[A-Za-z0-9_-]+$"
+    },
+    "run_id": {
+      "type": "string",
+      "pattern": "^run_[A-Za-z0-9_-]+$"
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "run.created",
+        "run.completed",
+        "run.failed",
+        "crew.member.registered",
+        "crew.member.status_changed",
+        "task.packet.created",
+        "task.plan.submitted",
+        "task.plan.approved",
+        "task.plan.rejected",
+        "task.status_changed",
+        "mailbox.message.sent",
+        "mailbox.message.delivered",
+        "mailbox.message.acknowledged",
+        "mailbox.message.failed",
+        "command.started",
+        "command.output",
+        "command.finished",
+        "evidence.submitted",
+        "steerer.review.completed"
+      ]
+    },
+    "actor": {
+      "$ref": "#/$defs/actor"
+    },
+    "task_id": {
+      "type": "string",
+      "pattern": "^task_[A-Za-z0-9_-]+$"
+    },
+    "message_id": {
+      "type": "string",
+      "pattern": "^msg_[A-Za-z0-9_-]+$"
+    },
+    "command_id": {
+      "type": "string",
+      "pattern": "^cmd_[A-Za-z0-9_-]+$"
+    },
+    "payload": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "$defs": {
+    "actor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "role",
+        "platform"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^agent_[A-Za-z0-9_-]+$"
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "steerer",
+            "frontend_rower",
+            "backend_rower",
+            "qa_ops_rower",
+            "custom_rower",
+            "system"
+          ]
+        },
+        "platform": {
+          "type": "string",
+          "enum": [
+            "dragonboat",
+            "codex_cli",
+            "claude_code_cli",
+            "manual",
+            "unknown"
+          ]
+        },
+        "display_name": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

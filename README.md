@@ -48,6 +48,18 @@ DragonBoat records the race:
 - **Evidence Bundle**: the result package a worker returns, including diff summary, commands run, outputs, risks, and follow-up notes.
 - **Command Deck**: the local desktop view for live progress, traceability, and replay.
 
+## v0.1 Design Docs
+
+- [Vision](docs/vision.md)
+- [v0.1 scope](docs/v0.1-scope.md)
+- [Core concepts](docs/concepts.md)
+- [Data contracts](docs/v0.1-data-contracts.md)
+- [Codex CLI adapter boundary](docs/adapters/codex-cli.md)
+- [Claude Code CLI adapter boundary](docs/adapters/claude-code-cli.md)
+- [Technical decisions](docs/v0.1-technical-decisions.md)
+- [Demo story](docs/demo-story.md)
+- [Desktop command deck](docs/desktop-demo.md)
+
 ## What DragonBoat Is Not
 
 DragonBoat is not a model provider, an IDE, a cloud agent platform, or a generic agent wrapper.

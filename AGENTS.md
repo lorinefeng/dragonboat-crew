@@ -35,6 +35,14 @@ The repository is in day-one design and documentation mode.
 
 Do not introduce implementation code, dependencies, generated apps, or framework choices unless the current task explicitly asks for implementation.
 
+The current v0.1 implementation baseline is documented in:
+
+- `docs/v0.1-data-contracts.md`
+- `docs/adapters/codex-cli.md`
+- `docs/adapters/claude-code-cli.md`
+- `docs/v0.1-technical-decisions.md`
+- `schemas/v0/*.schema.json`
+
 ## Design Principles
 
 - Local-first before cloud-first.
@@ -50,6 +58,7 @@ When implementation begins:
 
 - Prefer the repo's existing patterns over new abstractions.
 - Keep agent adapters separated from core crew/task/evidence semantics.
+- Validate task packets and evidence bundles against `schemas/v0`.
 - Keep worker outputs auditable: commands, logs, diffs, failures, and risks.
 - Avoid hidden destructive operations.
 - Never assume all agents support the same real-time control APIs.

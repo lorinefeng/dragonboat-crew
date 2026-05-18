@@ -1,0 +1,212 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dragonboat.dev/schemas/v0/task-packet.schema.json",
+  "title": "DragonBoat Task Packet",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "task_id",
+    "run_id",
+    "title",
+    "assigned_to",
+    "created_by",
+    "objective",
+    "context",
+    "work_boundary",
+    "acceptance_criteria",
+    "expected_evidence",
+    "reporting"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "dragonboat.task_packet.v0"
+    },
+    "task_id": {
+      "type": "string",
+      "pattern": "^task_[A-Za-z0-9_-]+$"
+    },
+    "run_id": {
+      "type": "string",
+      "pattern": "^run_[A-Za-z0-9_-]+$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "assigned_to": {
+      "$ref": "#/$defs/agent_ref"
+    },
+    "created_by": {
+      "$ref": "#/$defs/agent_ref"
+    },
+    "objective": {
+      "type": "string",
+      "minLength": 1
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "summary"
+      ],
+      "properties": {
+        "summary": {
+          "type": "string"
+        },
+        "relevant_files": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        },
+        "references": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/reference"
+          },
+          "default": []
+        },
+        "known_constraints": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        }
+      }
+    },
+    "work_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "worktree",
+        "allowed_paths",
+        "disallowed_paths"
+      ],
+      "properties": {
+        "worktree": {
+          "type": "string"
+        },
+        "allowed_paths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "disallowed_paths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "allowed_commands": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        }
+      }
+    },
+    "dependencies": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^task_[A-Za-z0-9_-]+$"
+      },
+      "default": []
+    },
+    "acceptance_criteria": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      }
+    },
+    "expected_evidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "enum": [
+          "plan",
+          "diff_summary",
+          "commands_run",
+          "test_results",
+          "risk_notes",
+          "mailbox_refs",
+          "screenshots",
+          "logs"
+        ]
+      }
+    },
+    "reporting": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "plan_required",
+        "evidence_schema",
+        "evidence_path"
+      ],
+      "properties": {
+        "plan_required": {
+          "type": "boolean"
+        },
+        "evidence_schema": {
+          "const": "dragonboat.evidence_bundle.v0"
+        },
+        "evidence_path": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "agent_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "role",
+        "platform"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^agent_[A-Za-z0-9_-]+$"
+        },
+        "role": {
+          "type": "string"
+        },
+        "platform": {
+          "type": "string"
+        }
+      }
+    },
+    "reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "value"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "file",
+            "url",
+            "command",
+            "note",
+            "mailbox_message"
+          ]
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
