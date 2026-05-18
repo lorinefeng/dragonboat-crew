@@ -10,6 +10,7 @@ import type {
   SendMessageInput,
   TaskStatus
 } from "../shared/types";
+import type { WorkerCommandRunner } from "./claudeWorkerRunner";
 
 type EventSubscriber = (event: DemoEvent) => void;
 
@@ -23,6 +24,21 @@ interface AppendEventInput {
 
 const RUN_ID = "run_demo_web_loop";
 const SEED_DATE = "2026-05-18T09:30:00.000Z";
+const REAL_WORKER_PROMPT = [
+  "You are the DragonBoat QA/Ops rower for the local demo.",
+  "Do not modify files.",
+  "Return a short evidence note proving the Claude Code worker process ran."
+].join(" ");
+
+export interface ClaudeWorkerTask {
+  name: string;
+  prompt: string;
+}
+
+export const DEFAULT_CLAUDE_WORKER_TASK: ClaudeWorkerTask = {
+  name: "dragonboat-qa-ops",
+  prompt: REAL_WORKER_PROMPT
+};
 
 function asString(value: unknown) {
   return typeof value === "string" ? value : "";
@@ -231,6 +247,77 @@ export class DemoEngine {
         taskId: "task_qa_ops",
         title: "Steerer review accepted",
         status: "passed"
+      }
+    });
+
+    return this.snapshot();
+  }
+
+  async runClaudeWorker(
+    workerRunner: WorkerCommandRunner,
+    cwd: string,
+    task: ClaudeWorkerTask = DEFAULT_CLAUDE_WORKER_TASK
+  ): Promise<DemoRun> {
+    this.append({
+      type: "crew.member.status_changed",
+      actor: "agent_codex",
+      payload: {
+        agentId: "agent_codex",
+        status: "planning"
+      }
+    });
+    this.appendCommand("agent_codex", "Codex steerer dispatching Claude Code QA/Ops worker.");
+    this.append({
+      type: "crew.member.status_changed",
+      actor: "agent_qa_ops",
+      payload: {
+        agentId: "agent_qa_ops",
+        status: "running"
+      }
+    });
+    this.appendTaskStatus("task_qa_ops", "agent_qa_ops", "running", 65);
+    this.appendCommand("agent_qa_ops", `$ claude --print --output-format text --name ${task.name}`);
+
+    const result = await workerRunner(
+      {
+        agentId: "agent_qa_ops",
+        taskId: "task_qa_ops",
+        name: task.name,
+        prompt: task.prompt,
+        cwd
+      },
+      (chunk) => {
+        this.appendCommand("agent_qa_ops", `[${chunk.stream}] ${chunk.line}`);
+      }
+    );
+    const passed = result.exitCode === 0;
+
+    this.appendTaskStatus("task_qa_ops", "agent_qa_ops", "evidence_submitted", passed ? 90 : 75);
+    this.append({
+      type: "crew.member.status_changed",
+      actor: "agent_codex",
+      payload: {
+        agentId: "agent_codex",
+        status: "reviewing"
+      }
+    });
+    this.append({
+      type: "crew.member.status_changed",
+      actor: "agent_qa_ops",
+      payload: {
+        agentId: "agent_qa_ops",
+        status: passed ? "done" : "blocked"
+      }
+    });
+    this.append({
+      type: "evidence.submitted",
+      actor: "agent_qa_ops",
+      taskId: "task_qa_ops",
+      payload: {
+        title: passed ? "Claude worker completed" : "Claude worker failed",
+        status: passed ? "passed" : "failed",
+        exitCode: result.exitCode,
+        signal: result.signal
       }
     });
 

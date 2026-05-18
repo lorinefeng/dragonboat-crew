@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import type { MessageType, SendMessageInput } from "../shared/types";
-import { DemoEngine, toSseEvent } from "./demoEngine";
+import { createClaudeCodeWorkerRunner, type WorkerCommandRunner } from "./claudeWorkerRunner";
+import { DEFAULT_CLAUDE_WORKER_TASK, DemoEngine, toSseEvent, type ClaudeWorkerTask } from "./demoEngine";
 
 const MESSAGE_TYPES = new Set<MessageType>([
   "status",
@@ -45,9 +46,52 @@ function parseMessageInput(value: unknown): SendMessageInput | { error: string }
   };
 }
 
-export function createDemoApi() {
+function parseWorkerTaskInput(value: unknown): ClaudeWorkerTask | { error: string } {
+  if (value === null) {
+    return DEFAULT_CLAUDE_WORKER_TASK;
+  }
+
+  if (!value || typeof value !== "object") {
+    return { error: "Worker task payload must be an object." };
+  }
+
+  const payload = value as Record<string, unknown>;
+  if (typeof payload.prompt !== "undefined" && typeof payload.prompt !== "string") {
+    return { error: "Worker task prompt must be a string." };
+  }
+
+  if (typeof payload.name !== "undefined" && typeof payload.name !== "string") {
+    return { error: "Worker task name must be a string." };
+  }
+
+  const prompt =
+    typeof payload.prompt === "undefined" ? DEFAULT_CLAUDE_WORKER_TASK.prompt : payload.prompt.trim();
+  const name = typeof payload.name === "undefined" ? DEFAULT_CLAUDE_WORKER_TASK.name : payload.name.trim();
+
+  if (!prompt) {
+    return { error: "Worker task prompt cannot be blank." };
+  }
+
+  if (!name) {
+    return { error: "Worker task name cannot be blank." };
+  }
+
+  return {
+    name,
+    prompt
+  };
+}
+
+interface DemoApiDependencies {
+  workerRunner?: WorkerCommandRunner;
+  workerCwd?: string;
+}
+
+export function createDemoApi(dependencies: DemoApiDependencies = {}) {
   const app = new Hono();
   const engine = new DemoEngine();
+  const workerRunner = dependencies.workerRunner ?? createClaudeCodeWorkerRunner();
+  const workerCwd = dependencies.workerCwd ?? process.env.DRAGONBOAT_WORKER_CWD ?? process.cwd();
 
   app.get("/api/run", (context) => context.json(engine.snapshot()));
 
@@ -82,6 +126,19 @@ export function createDemoApi() {
   });
 
   app.post("/api/demo-run", (context) => context.json(engine.runSimulatedCrew(), 201));
+
+  app.post("/api/worker-run", async (context) => {
+    const payload = await context.req.json().catch(() => null);
+    const task = parseWorkerTaskInput(payload);
+
+    if ("error" in task) {
+      return context.json({ error: task.error }, 400);
+    }
+
+    const snapshot = await engine.runClaudeWorker(workerRunner, workerCwd, task);
+
+    return context.json(snapshot, 201);
+  });
 
   app.post("/api/messages", async (context) => {
     const payload = await context.req.json().catch(() => null);

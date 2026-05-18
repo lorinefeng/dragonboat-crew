@@ -6,6 +6,7 @@ export interface DemoApiClient {
   loadRun(): Promise<DemoRun>;
   sendMessage(input: SendMessageInput): Promise<DemoRun>;
   runSimulatedCrew(): Promise<DemoRun>;
+  runClaudeWorker(): Promise<DemoRun>;
   subscribeEvents?(onEvent: (event: DemoEvent) => void): () => void;
 }
 
@@ -46,6 +47,14 @@ export function createHttpDemoApiClient(fetcher: Fetcher = fetch, baseUrl = ""):
 
     async runSimulatedCrew() {
       const response = await fetcher(endpoint(baseUrl, "/api/demo-run"), {
+        method: "POST"
+      });
+
+      return readJson<DemoRun>(response);
+    },
+
+    async runClaudeWorker() {
+      const response = await fetcher(endpoint(baseUrl, "/api/worker-run"), {
         method: "POST"
       });
 

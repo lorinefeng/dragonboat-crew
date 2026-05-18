@@ -54,6 +54,21 @@ claude \
 
 For the earliest file-polling prototype, `--mcp-config` can be omitted and the task packet can instruct the rower to read and write the local mailbox files. MCP should become the cleaner adapter path once the broker exists.
 
+The current demo starts with an even smaller smoke path:
+
+```bash
+claude \
+  --print \
+  --output-format text \
+  --name dragonboat-qa-ops \
+  --no-session-persistence \
+  <task-packet-prompt>
+```
+
+DragonBoat records stdout and stderr as `command.output` events and records the exit result as `evidence.submitted`. This proves the local process boundary before the adapter depends on stream-json, MCP, or schema-constrained evidence.
+
+The prompt should come from a structured DragonBoat task packet, not from parsing arbitrary steerer prose. In the current demo API, `/api/worker-run` accepts a minimal JSON payload with `prompt`; the future Codex steerer adapter should emit the richer task packet that contains this field plus owner, worktree, constraints, and acceptance criteria.
+
 ## Worktree Boundary
 
 Each rower gets:

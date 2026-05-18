@@ -104,6 +104,125 @@ describe("DragonBoat demo API", () => {
     });
   });
 
+  it("runs a Claude Code worker and records stdout, stderr, and evidence", async () => {
+    const app = createDemoApi({
+      workerRunner: async (input, onOutput) => {
+        expect(input.agentId).toBe("agent_qa_ops");
+        expect(input.taskId).toBe("task_qa_ops");
+        expect(input.prompt).toContain("DragonBoat");
+
+        onOutput({
+          stream: "stdout",
+          line: "worker stdout: qa checks passed"
+        });
+        onOutput({
+          stream: "stderr",
+          line: "worker stderr: no files changed"
+        });
+
+        return {
+          exitCode: 0
+        };
+      }
+    });
+
+    const response = await app.request("/api/worker-run", {
+      method: "POST"
+    });
+    const body = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(body.agentLogs.map((log: { line: string }) => log.line)).toContain(
+      "[stdout] worker stdout: qa checks passed"
+    );
+    expect(body.agentLogs.map((log: { line: string }) => log.line)).toContain(
+      "[stderr] worker stderr: no files changed"
+    );
+    expect(body.evidence.at(-1)).toMatchObject({
+      title: "Claude worker completed",
+      status: "passed"
+    });
+    expect(body.crew.steerer.status).toBe("reviewing");
+
+    const eventsResponse = await app.request("/api/events");
+    const events = await eventsResponse.json();
+
+    expect(events.map((event: { type: string }) => event.type)).toContain("command.output");
+    expect(events.at(-1)).toMatchObject({
+      actor: "agent_qa_ops",
+      type: "evidence.submitted"
+    });
+  });
+
+  it("passes a structured task packet prompt into the Claude Code worker", async () => {
+    const app = createDemoApi({
+      workerRunner: async (input, onOutput) => {
+        expect(input.prompt).toBe("Report a one-line DragonBoat worker heartbeat.");
+
+        onOutput({
+          stream: "stdout",
+          line: "worker stdout: custom prompt received"
+        });
+
+        return {
+          exitCode: 0
+        };
+      }
+    });
+
+    const response = await app.request("/api/worker-run", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        prompt: "Report a one-line DragonBoat worker heartbeat."
+      })
+    });
+    const body = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(body.agentLogs.map((log: { line: string }) => log.line)).toContain(
+      "[stdout] worker stdout: custom prompt received"
+    );
+  });
+
+  it("rejects blank Claude worker task prompts", async () => {
+    const app = createDemoApi();
+
+    const response = await app.request("/api/worker-run", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        prompt: "  "
+      })
+    });
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body.error).toBe("Worker task prompt cannot be blank.");
+  });
+
+  it("rejects malformed Claude worker task prompts", async () => {
+    const app = createDemoApi();
+
+    const response = await app.request("/api/worker-run", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        prompt: 42
+      })
+    });
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body.error).toBe("Worker task prompt must be a string.");
+  });
+
   it("serves an SSE endpoint for live cockpit updates", async () => {
     const app = createDemoApi();
 

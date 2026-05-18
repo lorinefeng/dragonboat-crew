@@ -158,6 +158,49 @@ function createFakeClient(): DemoApiClient {
 
       return currentRun;
     }),
+    runClaudeWorker: vi.fn(async () => {
+      currentRun = {
+        ...currentRun,
+        tasks: currentRun.tasks.map((task) =>
+          task.id === "task_qa_ops" ? { ...task, status: "evidence_submitted", progress: 90 } : task
+        ),
+        evidence: [
+          ...currentRun.evidence,
+          {
+            id: "evidence_worker",
+            taskId: "task_qa_ops",
+            title: "Claude worker completed",
+            status: "passed"
+          }
+        ],
+        agentLogs: [
+          ...currentRun.agentLogs,
+          {
+            id: "log_worker",
+            agentId: "agent_qa_ops",
+            line: "[stdout] worker stdout: qa checks passed",
+            createdAt: "2026-05-18T09:45:00.000Z"
+          }
+        ],
+        events: [
+          ...currentRun.events,
+          {
+            id: "evt_worker",
+            seq: currentRun.events.length + 1,
+            runId: currentRun.runId,
+            type: "evidence.submitted",
+            actor: "agent_qa_ops",
+            createdAt: "2026-05-18T09:45:00.000Z",
+            payload: {
+              title: "Claude worker completed",
+              status: "passed"
+            }
+          }
+        ]
+      };
+
+      return currentRun;
+    }),
     subscribeEvents: vi.fn(() => () => undefined),
     sendMessage: vi.fn(async (input) => {
       currentRun = {
@@ -249,5 +292,23 @@ describe("DragonBoat demo command board", () => {
     expect(await screen.findByText("Codex approved rower evidence and accepted the run.")).toBeInTheDocument();
     expect(screen.getByText("Steerer review accepted")).toBeInTheDocument();
     expect(screen.getByText("steerer.review.completed")).toBeInTheDocument();
+  });
+
+  it("runs a real Claude worker boundary from the UI", async () => {
+    const user = userEvent.setup();
+    const api = createFakeClient();
+
+    render(<App api={api} />);
+
+    await screen.findByText("Codex Steerer");
+    await user.click(screen.getByRole("button", { name: "Run Claude worker" }));
+
+    await waitFor(() => {
+      expect(api.runClaudeWorker).toHaveBeenCalledOnce();
+    });
+
+    expect(await screen.findByText("[stdout] worker stdout: qa checks passed")).toBeInTheDocument();
+    expect(screen.getByText("Claude worker completed")).toBeInTheDocument();
+    expect(screen.getByText("evidence_submitted")).toBeInTheDocument();
   });
 });

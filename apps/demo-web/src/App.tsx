@@ -201,6 +201,7 @@ export function App({ api = httpDemoApiClient }: AppProps) {
   const [error, setError] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
+  const [isWorkerRunning, setIsWorkerRunning] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -272,6 +273,20 @@ export function App({ api = httpDemoApiClient }: AppProps) {
     }
   }, [api]);
 
+  const runClaudeWorker = useCallback(async () => {
+    setIsWorkerRunning(true);
+    setError(null);
+
+    try {
+      const nextRun = await api.runClaudeWorker();
+      setRun(nextRun);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Unable to run Claude worker.");
+    } finally {
+      setIsWorkerRunning(false);
+    }
+  }, [api]);
+
   if (error && !run) {
     return (
       <main className="app-shell">
@@ -307,6 +322,10 @@ export function App({ api = httpDemoApiClient }: AppProps) {
           <button disabled={isRunning} onClick={runSimulatedCrew} type="button">
             <Play aria-hidden="true" />
             Run simulated crew
+          </button>
+          <button disabled={isWorkerRunning} onClick={runClaudeWorker} type="button">
+            <TerminalSquare aria-hidden="true" />
+            Run Claude worker
           </button>
           <button disabled={isSending} onClick={recordContract} type="button">
             <Send aria-hidden="true" />

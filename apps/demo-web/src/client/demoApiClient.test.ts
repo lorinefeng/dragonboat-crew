@@ -44,4 +44,25 @@ describe("demo API client", () => {
     expect(updatedRun.agentLogs.some((log) => log.line.includes("Codex approved rower evidence"))).toBe(true);
     expect(updatedRun.events.at(-1)?.type).toBe("steerer.review.completed");
   });
+
+  it("runs the Claude worker loop through the Hono API contract", async () => {
+    const app = createDemoApi({
+      workerRunner: async (_input, onOutput) => {
+        onOutput({
+          stream: "stdout",
+          line: "worker stdout: online"
+        });
+
+        return {
+          exitCode: 0
+        };
+      }
+    });
+    const client = createHttpDemoApiClient(createAppFetch(app));
+
+    const updatedRun = await client.runClaudeWorker();
+
+    expect(updatedRun.agentLogs.some((log) => log.line.includes("[stdout] worker stdout: online"))).toBe(true);
+    expect(updatedRun.evidence.at(-1)?.title).toBe("Claude worker completed");
+  });
 });

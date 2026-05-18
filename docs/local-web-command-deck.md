@@ -94,6 +94,10 @@ Shows per-agent command output, phase changes, and exit state.
 
 This should become the primary monitoring surface for Codex and Claude Code subprocesses before DragonBoat adds native desktop packaging.
 
+The first real subprocess path is intentionally narrow: the command deck can dispatch one local Claude Code worker from a minimal structured task packet, capture stdout and stderr into `command.output`, and turn the exit result into `evidence.submitted`.
+
+This does not parse arbitrary Codex prose. The expected steerer boundary is structured output: Codex should produce a task packet, DragonBoat should validate and route it, and the Claude Code adapter should receive the task packet's prompt.
+
 ### Event Stream
 
 Shows append-only local events as they arrive.
