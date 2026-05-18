@@ -34,4 +34,14 @@ describe("demo API client", () => {
     });
     expect(updatedRun.tasks.find((task) => task.id === "task_frontend")?.status).toBe("contract_received");
   });
+
+  it("runs the simulated crew loop through the Hono API contract", async () => {
+    const app = createDemoApi();
+    const client = createHttpDemoApiClient(createAppFetch(app));
+
+    const updatedRun = await client.runSimulatedCrew();
+
+    expect(updatedRun.agentLogs.some((log) => log.line.includes("Codex approved rower evidence"))).toBe(true);
+    expect(updatedRun.events.at(-1)?.type).toBe("steerer.review.completed");
+  });
 });

@@ -41,7 +41,7 @@ All Claude Code rowers may use the same local Claude Code configuration. Their i
 10. QA/Ops watches runability and test coverage.
 11. Each rower submits an evidence bundle.
 12. Codex reviews all evidence.
-13. DragonBoat desktop replays the run.
+13. DragonBoat local web command deck replays the run.
 
 The current mock demonstrates the middle of that arc manually: a command board loads a crew run, records a backend-to-frontend contract message, updates task status, and marks the evidence queue as passed.
 

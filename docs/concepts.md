@@ -135,7 +135,7 @@ The event log powers traceability and replay.
 
 ## Command Deck
 
-The command deck is the local desktop surface for DragonBoat.
+The command deck is the local web surface for DragonBoat.
 
 It should show the current run as a visible workflow:
 
@@ -143,6 +143,8 @@ It should show the current run as a visible workflow:
 - task graph
 - mailbox timeline
 - evidence panel
+- agent console
+- event stream
 - replay controls
 
 The command deck is for observation, trust, and storytelling. It is not the primary place to configure agent accounts in v0.1.

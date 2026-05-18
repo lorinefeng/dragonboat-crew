@@ -1,6 +1,6 @@
 import { Hono } from "hono";
-import { createInitialDemoRun } from "../shared/seed";
-import type { DemoRun, MailboxMessage, MessageType, SendMessageInput } from "../shared/types";
+import type { MessageType, SendMessageInput } from "../shared/types";
+import { DemoEngine, toSseEvent } from "./demoEngine";
 
 const MESSAGE_TYPES = new Set<MessageType>([
   "status",
@@ -10,10 +10,6 @@ const MESSAGE_TYPES = new Set<MessageType>([
   "review",
   "evidence"
 ]);
-
-function cloneRun(run: DemoRun): DemoRun {
-  return structuredClone(run);
-}
 
 function isMessageType(value: unknown): value is MessageType {
   return typeof value === "string" && MESSAGE_TYPES.has(value as MessageType);
@@ -51,10 +47,41 @@ function parseMessageInput(value: unknown): SendMessageInput | { error: string }
 
 export function createDemoApi() {
   const app = new Hono();
-  let run = createInitialDemoRun();
-  let nextMessageNumber = 1;
+  const engine = new DemoEngine();
 
-  app.get("/api/run", (context) => context.json(cloneRun(run)));
+  app.get("/api/run", (context) => context.json(engine.snapshot()));
+
+  app.get("/api/events", (context) => context.json(engine.listEvents()));
+
+  app.get("/api/events/stream", () => {
+    const encoder = new TextEncoder();
+    let unsubscribe: () => void = () => undefined;
+
+    const stream = new ReadableStream({
+      start(controller) {
+        for (const event of engine.listEvents()) {
+          controller.enqueue(encoder.encode(toSseEvent(event)));
+        }
+
+        unsubscribe = engine.subscribe((event) => {
+          controller.enqueue(encoder.encode(toSseEvent(event)));
+        });
+      },
+      cancel() {
+        unsubscribe();
+      }
+    });
+
+    return new Response(stream, {
+      headers: {
+        "cache-control": "no-cache",
+        "content-type": "text/event-stream; charset=utf-8",
+        connection: "keep-alive"
+      }
+    });
+  });
+
+  app.post("/api/demo-run", (context) => context.json(engine.runSimulatedCrew(), 201));
 
   app.post("/api/messages", async (context) => {
     const payload = await context.req.json().catch(() => null);
@@ -64,35 +91,7 @@ export function createDemoApi() {
       return context.json({ error: input.error }, 400);
     }
 
-    const message: MailboxMessage = {
-      id: `msg_contract_${nextMessageNumber}`,
-      createdAt: new Date().toISOString(),
-      ...input
-    };
-    nextMessageNumber += 1;
-
-    run = {
-      ...run,
-      tasks: run.tasks.map((task) => {
-        if (task.id === "task_backend") {
-          return { ...task, status: "handoff_sent", progress: Math.max(task.progress, 65) };
-        }
-
-        if (task.id === "task_frontend") {
-          return { ...task, status: "contract_received", progress: Math.max(task.progress, 50) };
-        }
-
-        return task;
-      }),
-      mailbox: [...run.mailbox, message],
-      evidence: run.evidence.map((item) =>
-        item.id === "evidence_seed"
-          ? { ...item, title: "Backend contract handoff recorded", status: "passed" }
-          : item
-      )
-    };
-
-    return context.json(cloneRun(run), 201);
+    return context.json(engine.sendMessage(input), 201);
   });
 
   return app;

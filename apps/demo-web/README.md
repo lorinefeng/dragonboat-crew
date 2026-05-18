@@ -11,6 +11,9 @@ It is intentionally small: a full-stack command board that proves the basic crew
 - The frontend loads a run snapshot from a Hono API.
 - The UI can record a backend-to-frontend contract handoff.
 - The API updates task status, mailbox timeline, and evidence state.
+- The API exposes an ordered local event log and an SSE endpoint.
+- The UI shows an agent console and event stream for live cockpit monitoring.
+- A simulated crew run button demonstrates the intended realtime flow before real Codex/Claude subprocesses are attached.
 - Tests cover backend behavior, frontend behavior, and the client-to-API contract.
 
 ## Commands

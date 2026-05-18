@@ -1,9 +1,35 @@
 export type AgentPlatform = "codex_cli" | "claude_code_cli";
 export type AgentRole = "steerer" | "frontend" | "backend" | "qa_ops";
-export type AgentStatus = "steering" | "ready" | "watching" | "working" | "blocked";
-export type TaskStatus = "ready" | "watching" | "handoff_sent" | "contract_received" | "verified";
+export type AgentStatus =
+  | "steering"
+  | "ready"
+  | "watching"
+  | "planning"
+  | "running"
+  | "reviewing"
+  | "done"
+  | "blocked";
+export type TaskStatus =
+  | "ready"
+  | "watching"
+  | "running"
+  | "handoff_sent"
+  | "contract_received"
+  | "evidence_submitted"
+  | "reviewed"
+  | "verified";
 export type MessageType = "status" | "contract" | "question" | "blocker" | "review" | "evidence";
 export type EvidenceStatus = "pending" | "passed" | "failed";
+export type DemoPhase = "ready" | "running" | "reviewed";
+export type DemoEventType =
+  | "run.created"
+  | "crew.member.status_changed"
+  | "task.packet.created"
+  | "task.status_changed"
+  | "mailbox.message.sent"
+  | "command.output"
+  | "evidence.submitted"
+  | "steerer.review.completed";
 
 export interface CrewMember {
   id: string;
@@ -39,8 +65,28 @@ export interface EvidenceItem {
   status: EvidenceStatus;
 }
 
+export interface AgentLog {
+  id: string;
+  agentId: string;
+  line: string;
+  createdAt: string;
+}
+
+export interface DemoEvent {
+  id: string;
+  seq: number;
+  runId: string;
+  type: DemoEventType;
+  actor: string;
+  createdAt: string;
+  taskId?: string;
+  messageId?: string;
+  payload?: Record<string, unknown>;
+}
+
 export interface DemoRun {
   runId: string;
+  phase: DemoPhase;
   crew: {
     steerer: CrewMember;
     rowers: CrewMember[];
@@ -48,6 +94,8 @@ export interface DemoRun {
   tasks: DemoTask[];
   mailbox: MailboxMessage[];
   evidence: EvidenceItem[];
+  agentLogs: AgentLog[];
+  events: DemoEvent[];
 }
 
 export interface SendMessageInput {

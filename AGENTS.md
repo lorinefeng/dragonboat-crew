@@ -25,7 +25,7 @@ The v0.1 demo direction is:
 - Claude Code CLI acts as rower workers.
 - Three rowers handle frontend, backend, and QA/Ops work.
 - Each worker uses an isolated worktree.
-- The desktop surface shows progress, mailbox traffic, evidence, and replay.
+- The local web command deck shows progress, mailbox traffic, agent console output, event streams, evidence, and replay.
 
 Treat this demo stack as the first proof, not as the permanent architecture. DragonBoat must remain cross-platform and user-owned.
 
@@ -50,7 +50,7 @@ The current v0.1 implementation baseline is documented in:
 - Evidence before claims.
 - User-owned model routing before provider lock-in.
 - Small verifiable tasks before autonomous mega-runs.
-- Desktop as command deck and replay surface, not as an agent configuration replacement.
+- Local web command deck as the first replay and monitoring surface, not as an agent configuration replacement.
 
 ## Implementation Guardrails
 

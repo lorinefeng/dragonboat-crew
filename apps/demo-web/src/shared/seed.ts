@@ -3,6 +3,7 @@ import type { DemoRun } from "./types";
 export function createInitialDemoRun(): DemoRun {
   return {
     runId: "run_demo_web_loop",
+    phase: "ready",
     crew: {
       steerer: {
         id: "agent_codex",
@@ -61,17 +62,7 @@ export function createInitialDemoRun(): DemoRun {
         progress: 45
       }
     ],
-    mailbox: [
-      {
-        id: "msg_seed",
-        from: "agent_codex",
-        to: "agent_backend",
-        taskId: "task_backend",
-        type: "status",
-        body: "Prepare the first contract handoff for the frontend rower.",
-        createdAt: "2026-05-18T09:30:00.000Z"
-      }
-    ],
+    mailbox: [],
     evidence: [
       {
         id: "evidence_seed",
@@ -79,6 +70,8 @@ export function createInitialDemoRun(): DemoRun {
         title: "Baseline checks queued",
         status: "pending"
       }
-    ]
+    ],
+    agentLogs: [],
+    events: []
   };
 }

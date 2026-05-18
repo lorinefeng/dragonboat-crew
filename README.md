@@ -46,7 +46,7 @@ DragonBoat records the race:
 - **Task Packet**: the bounded assignment handed to a worker, including context, constraints, deliverables, and acceptance criteria.
 - **Peer Mailbox**: point-to-point agent messages for contracts, questions, blockers, status, review, and evidence.
 - **Evidence Bundle**: the result package a worker returns, including diff summary, commands run, outputs, risks, and follow-up notes.
-- **Command Deck**: the local desktop view for live progress, traceability, and replay.
+- **Command Deck**: the local web view for live progress, traceability, and replay.
 
 ## v0.1 Design Docs
 
@@ -58,7 +58,7 @@ DragonBoat records the race:
 - [Claude Code CLI adapter boundary](docs/adapters/claude-code-cli.md)
 - [Technical decisions](docs/v0.1-technical-decisions.md)
 - [Demo story](docs/demo-story.md)
-- [Desktop command deck](docs/desktop-demo.md)
+- [Local web command deck](docs/local-web-command-deck.md)
 
 ## What DragonBoat Is Not
 

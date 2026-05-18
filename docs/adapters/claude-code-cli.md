@@ -70,7 +70,7 @@ The rower may inspect the repo and run checks, but it should only modify files a
 
 Each rower must submit a plan before implementation.
 
-The steerer can approve, reject, or revise the plan. This protects v0.1 from uncontrolled parallel edits and makes the desktop trace more understandable.
+The steerer can approve, reject, or revise the plan. This protects v0.1 from uncontrolled parallel edits and makes the command-deck trace more understandable.
 
 ## Evidence Rule
 

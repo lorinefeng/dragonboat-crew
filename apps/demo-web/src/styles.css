@@ -83,7 +83,13 @@ button {
   cursor: pointer;
   font-size: 14px;
   font-weight: 800;
+  white-space: nowrap;
   box-shadow: 0 12px 24px rgba(228, 81, 61, 0.24);
+}
+
+.run-actions button:nth-of-type(1) {
+  background: #11181c;
+  box-shadow: 0 12px 24px rgba(17, 24, 28, 0.18);
 }
 
 .run-actions button:disabled {
@@ -236,6 +242,86 @@ button {
   gap: 10px;
   margin: 12px;
   padding: 12px;
+}
+
+.console-panel,
+.event-panel {
+  grid-column: span 1;
+}
+
+.console-list,
+.event-list {
+  display: grid;
+  gap: 8px;
+  max-height: 320px;
+  overflow: auto;
+  padding: 12px;
+}
+
+.console-row,
+.event-row {
+  border: 1px solid #edf1f4;
+  border-radius: 8px;
+  background: #11181c;
+  color: #f7fbff;
+}
+
+.console-row {
+  padding: 10px 12px;
+}
+
+.console-row span {
+  color: #8ddfd4;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.console-row p {
+  margin: 5px 0 0;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.event-row {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 2px 8px;
+  padding: 9px 10px;
+}
+
+.event-row span {
+  color: #8ddfd4;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.event-row strong {
+  font-size: 12px;
+}
+
+.event-row p {
+  grid-column: 2;
+  margin: 0;
+  color: #a7b4bd;
+  font-size: 12px;
+}
+
+.event-row code {
+  grid-column: 2;
+  overflow: hidden;
+  color: #f7fbff;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 11px;
+  line-height: 1.45;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.muted-line {
+  margin: 0;
+  color: #52616b;
+  font-size: 13px;
 }
 
 .evidence-row svg {

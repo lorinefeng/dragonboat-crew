@@ -1,8 +1,10 @@
-# Desktop Command Deck
+# Local Web Command Deck
 
-The DragonBoat desktop app should make multi-agent coding work visible.
+The DragonBoat command deck should make multi-agent coding work visible.
 
-For v0.1, it is not an agent configuration center. It is a command deck and replay surface.
+For v0.1, the command deck is a local web app rather than a packaged desktop app.
+
+It is not an agent configuration center. It is a command deck and replay surface.
 
 ## Goals
 
@@ -86,9 +88,21 @@ Replays:
 
 Replay mode is important for launch storytelling. It should make a run understandable even after all terminals are closed.
 
+### Agent Console
+
+Shows per-agent command output, phase changes, and exit state.
+
+This should become the primary monitoring surface for Codex and Claude Code subprocesses before DragonBoat adds native desktop packaging.
+
+### Event Stream
+
+Shows append-only local events as they arrive.
+
+The v0.1 web app can subscribe through Server-Sent Events. Future adapters can write the same event stream from CLI hooks, MCP tools, or file polling.
+
 ## Non-Goals
 
-The v0.1 desktop app should not:
+The v0.1 command deck should not:
 
 - configure Codex accounts
 - configure Claude Code accounts
@@ -96,6 +110,7 @@ The v0.1 desktop app should not:
 - become a full IDE
 - edit code directly
 - hide the underlying evidence
+- require native desktop packaging
 
 ## Design Tone
 

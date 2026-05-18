@@ -35,7 +35,7 @@ The first demo uses:
 - isolated worktrees per rower
 - a newly created minimal full-stack web app
 - local event capture
-- command-deck desktop replay
+- local web command-deck replay
 
 ## Core Concepts
 
@@ -50,17 +50,21 @@ DragonBoat v0.1 should be designed around:
 
 These concepts are product semantics. Specific agent integrations should remain adapters.
 
-## Desktop Scope
+## Local Web Command Deck Scope
 
-The desktop app is for:
+The local web command deck is for:
 
 - live workflow visibility
 - mailbox tracing
+- agent console output
+- event stream inspection
 - evidence inspection
 - replay
 - launch demo storytelling
 
 It is not for configuring Codex, Claude Code, or other agent accounts in v0.1.
+
+Native desktop packaging is deferred. A future Tauri shell can wrap the local web command deck if distribution requires it.
 
 ## Non-Goals
 
@@ -87,7 +91,7 @@ That plan should decide:
 - mailbox delivery model
 - Codex adapter boundary
 - Claude Code adapter boundary
-- desktop technology
+- command deck runtime details
 - demo app stack
 
 Those decisions are intentionally outside this day-one design document.

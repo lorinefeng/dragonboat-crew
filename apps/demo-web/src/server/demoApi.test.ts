@@ -59,6 +59,60 @@ describe("DragonBoat demo API", () => {
     });
   });
 
+  it("exposes an ordered local event log for command deck replay", async () => {
+    const app = createDemoApi();
+
+    const response = await app.request("/api/events");
+    const events = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(events.at(0)).toMatchObject({
+      seq: 1,
+      type: "run.created",
+      runId: "run_demo_web_loop"
+    });
+    expect(events.map((event: { seq: number }) => event.seq)).toEqual([1, 2, 3, 4]);
+  });
+
+  it("runs a simulated crew timeline with console output and final review evidence", async () => {
+    const app = createDemoApi();
+
+    const response = await app.request("/api/demo-run", {
+      method: "POST"
+    });
+    const body = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(body.agentLogs.map((log: { agentId: string }) => log.agentId)).toContain("agent_codex");
+    expect(body.agentLogs.map((log: { agentId: string }) => log.agentId)).toContain("agent_frontend");
+    expect(body.agentLogs.map((log: { agentId: string }) => log.agentId)).toContain("agent_backend");
+    expect(body.agentLogs.map((log: { agentId: string }) => log.agentId)).toContain("agent_qa_ops");
+    expect(body.agentLogs.map((log: { line: string }) => log.line)).toContain(
+      "$ claude --agent qa_ops --run \"npm run demo:test && npm run demo:build\""
+    );
+    expect(body.evidence.at(-1)).toMatchObject({
+      title: "Steerer review accepted",
+      status: "passed"
+    });
+
+    const eventsResponse = await app.request("/api/events");
+    const events = await eventsResponse.json();
+
+    expect(events.map((event: { type: string }) => event.type)).toContain("command.output");
+    expect(events.at(-1)).toMatchObject({
+      type: "steerer.review.completed"
+    });
+  });
+
+  it("serves an SSE endpoint for live cockpit updates", async () => {
+    const app = createDemoApi();
+
+    const response = await app.request("/api/events/stream");
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toContain("text/event-stream");
+  });
+
   it("rejects blank mailbox handoffs so rowers cannot emit empty coordination events", async () => {
     const app = createDemoApi();
 

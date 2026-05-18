@@ -2,13 +2,15 @@ import {
   Activity,
   CheckCircle2,
   GitBranch,
+  ListTree,
+  Play,
   RadioTower,
   Send,
   ShieldCheck,
   TerminalSquare
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { httpDemoApiClient, type DemoApiClient, type DemoRun } from "./client/demoApiClient";
+import { httpDemoApiClient, type DemoApiClient, type DemoEvent, type DemoRun } from "./client/demoApiClient";
 
 interface AppProps {
   api?: DemoApiClient;
@@ -18,6 +20,35 @@ const CONTRACT_MESSAGE = "GET /api/run returns crew, tasks, mailbox, and evidenc
 
 function platformLabel(platform: string) {
   return platform === "codex_cli" ? "Codex CLI" : "Claude Code CLI";
+}
+
+function stringPayload(event: DemoEvent, key: string) {
+  const value = event.payload?.[key];
+  return typeof value === "string" ? value : "";
+}
+
+function formatEventPayload(event: DemoEvent) {
+  if (event.type === "command.output") {
+    return stringPayload(event, "line");
+  }
+
+  if (event.type === "mailbox.message.sent") {
+    return stringPayload(event, "body");
+  }
+
+  if (event.type === "task.status_changed") {
+    const status = stringPayload(event, "status");
+    const progress = event.payload?.progress;
+    return `${status}${typeof progress === "number" ? ` / ${progress}%` : ""}`;
+  }
+
+  if (event.type === "evidence.submitted" || event.type === "steerer.review.completed") {
+    const title = stringPayload(event, "title");
+    const status = stringPayload(event, "status");
+    return `${title}${status ? ` / ${status}` : ""}`;
+  }
+
+  return stringPayload(event, "title");
 }
 
 function CrewPanel({ run }: { run: DemoRun }) {
@@ -117,10 +148,59 @@ function EvidencePanel({ run }: { run: DemoRun }) {
   );
 }
 
+function AgentConsole({ run }: { run: DemoRun }) {
+  const visibleLogs = run.agentLogs.slice(-8).reverse();
+
+  return (
+    <section className="panel console-panel" aria-labelledby="console-heading">
+      <div className="panel-heading">
+        <TerminalSquare aria-hidden="true" />
+        <h2 id="console-heading">Agent Console</h2>
+      </div>
+      <div className="console-list">
+        {run.agentLogs.length === 0 ? (
+          <p className="muted-line">Waiting for agent output.</p>
+        ) : (
+          visibleLogs.map((log) => (
+            <article className="console-row" key={log.id}>
+              <span>{log.agentId}</span>
+              <p>{log.line}</p>
+            </article>
+          ))
+        )}
+      </div>
+    </section>
+  );
+}
+
+function EventStreamPanel({ run }: { run: DemoRun }) {
+  const visibleEvents = run.events.slice(-10).reverse();
+
+  return (
+    <section className="panel event-panel" aria-labelledby="event-heading">
+      <div className="panel-heading">
+        <ListTree aria-hidden="true" />
+        <h2 id="event-heading">Event Stream</h2>
+      </div>
+      <div className="event-list">
+        {visibleEvents.map((event) => (
+          <article className="event-row" key={event.id}>
+            <span>#{event.seq}</span>
+            <strong>{event.type}</strong>
+            <p>{event.actor}</p>
+            {formatEventPayload(event) ? <code>{formatEventPayload(event)}</code> : null}
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export function App({ api = httpDemoApiClient }: AppProps) {
   const [run, setRun] = useState<DemoRun | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
+  const [isRunning, setIsRunning] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -143,6 +223,21 @@ export function App({ api = httpDemoApiClient }: AppProps) {
     };
   }, [api]);
 
+  useEffect(() => {
+    if (!api.subscribeEvents) {
+      return undefined;
+    }
+
+    return api.subscribeEvents(() => {
+      api
+        .loadRun()
+        .then(setRun)
+        .catch((cause: unknown) => {
+          setError(cause instanceof Error ? cause.message : "Unable to refresh live event stream.");
+        });
+    });
+  }, [api]);
+
   const recordContract = useCallback(async () => {
     setIsSending(true);
     setError(null);
@@ -160,6 +255,20 @@ export function App({ api = httpDemoApiClient }: AppProps) {
       setError(cause instanceof Error ? cause.message : "Unable to record handoff.");
     } finally {
       setIsSending(false);
+    }
+  }, [api]);
+
+  const runSimulatedCrew = useCallback(async () => {
+    setIsRunning(true);
+    setError(null);
+
+    try {
+      const nextRun = await api.runSimulatedCrew();
+      setRun(nextRun);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Unable to run simulated crew.");
+    } finally {
+      setIsRunning(false);
     }
   }, [api]);
 
@@ -194,6 +303,11 @@ export function App({ api = httpDemoApiClient }: AppProps) {
         </div>
         <div className="run-actions">
           <span>{run.runId}</span>
+          <span>{run.phase}</span>
+          <button disabled={isRunning} onClick={runSimulatedCrew} type="button">
+            <Play aria-hidden="true" />
+            Run simulated crew
+          </button>
           <button disabled={isSending} onClick={recordContract} type="button">
             <Send aria-hidden="true" />
             Record backend contract
@@ -208,6 +322,8 @@ export function App({ api = httpDemoApiClient }: AppProps) {
         <TaskBoard run={run} />
         <MailboxPanel run={run} />
         <EvidencePanel run={run} />
+        <AgentConsole run={run} />
+        <EventStreamPanel run={run} />
       </div>
     </main>
   );

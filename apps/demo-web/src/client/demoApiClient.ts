@@ -1,10 +1,12 @@
-import type { DemoRun, SendMessageInput } from "../shared/types";
+import type { DemoEvent, DemoRun, SendMessageInput } from "../shared/types";
 
-export type { DemoRun, SendMessageInput } from "../shared/types";
+export type { DemoEvent, DemoRun, SendMessageInput } from "../shared/types";
 
 export interface DemoApiClient {
   loadRun(): Promise<DemoRun>;
   sendMessage(input: SendMessageInput): Promise<DemoRun>;
+  runSimulatedCrew(): Promise<DemoRun>;
+  subscribeEvents?(onEvent: (event: DemoEvent) => void): () => void;
 }
 
 type Fetcher = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
@@ -40,6 +42,30 @@ export function createHttpDemoApiClient(fetcher: Fetcher = fetch, baseUrl = ""):
       });
 
       return readJson<DemoRun>(response);
+    },
+
+    async runSimulatedCrew() {
+      const response = await fetcher(endpoint(baseUrl, "/api/demo-run"), {
+        method: "POST"
+      });
+
+      return readJson<DemoRun>(response);
+    },
+
+    subscribeEvents(onEvent) {
+      if (baseUrl || typeof EventSource === "undefined") {
+        return () => undefined;
+      }
+
+      const source = new EventSource("/api/events/stream");
+
+      source.addEventListener("dragonboat-event", (message) => {
+        onEvent(JSON.parse(message.data) as DemoEvent);
+      });
+
+      return () => {
+        source.close();
+      };
     }
   };
 }

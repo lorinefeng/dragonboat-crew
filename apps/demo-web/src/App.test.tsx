@@ -6,6 +6,7 @@ import type { DemoApiClient, DemoRun } from "./client/demoApiClient";
 
 const demoRun: DemoRun = {
   runId: "run_mock",
+  phase: "ready",
   crew: {
     steerer: {
       id: "agent_codex",
@@ -82,6 +83,35 @@ const demoRun: DemoRun = {
       title: "Baseline checks queued",
       status: "pending"
     }
+  ],
+  agentLogs: [
+    {
+      id: "log_seed",
+      agentId: "agent_codex",
+      line: "Codex prepared the initial task graph.",
+      createdAt: "2026-05-18T09:30:00.000Z"
+    }
+  ],
+  events: [
+    {
+      id: "evt_seed",
+      seq: 1,
+      runId: "run_mock",
+      type: "run.created",
+      actor: "agent_system",
+      createdAt: "2026-05-18T09:29:00.000Z"
+    },
+    {
+      id: "evt_command",
+      seq: 2,
+      runId: "run_mock",
+      type: "command.output",
+      actor: "agent_codex",
+      createdAt: "2026-05-18T09:30:00.000Z",
+      payload: {
+        line: "$ codex exec --profile steerer \"split demo web loop\""
+      }
+    }
   ]
 };
 
@@ -90,6 +120,45 @@ function createFakeClient(): DemoApiClient {
 
   return {
     loadRun: vi.fn(async () => currentRun),
+    runSimulatedCrew: vi.fn(async () => {
+      currentRun = {
+        ...currentRun,
+        phase: "reviewed",
+        tasks: currentRun.tasks.map((task) => ({ ...task, status: "verified", progress: 100 })),
+        evidence: [
+          ...currentRun.evidence,
+          {
+            id: "evidence_review",
+            taskId: "task_qa_ops",
+            title: "Steerer review accepted",
+            status: "passed"
+          }
+        ],
+        agentLogs: [
+          ...currentRun.agentLogs,
+          {
+            id: "log_review",
+            agentId: "agent_codex",
+            line: "Codex approved rower evidence and accepted the run.",
+            createdAt: "2026-05-18T09:40:00.000Z"
+          }
+        ],
+        events: [
+          ...currentRun.events,
+          {
+            id: "evt_review",
+            seq: currentRun.events.length + 1,
+            runId: currentRun.runId,
+            type: "steerer.review.completed",
+            actor: "agent_codex",
+            createdAt: "2026-05-18T09:40:00.000Z"
+          }
+        ]
+      };
+
+      return currentRun;
+    }),
+    subscribeEvents: vi.fn(() => () => undefined),
     sendMessage: vi.fn(async (input) => {
       currentRun = {
         ...currentRun,
@@ -130,6 +199,15 @@ describe("DragonBoat demo command board", () => {
     expect(screen.getByText("Render command deck handoff")).toBeInTheDocument();
     expect(screen.getByText("Prepare the first contract handoff for the frontend rower.")).toBeInTheDocument();
     expect(screen.getByText("Baseline checks queued")).toBeInTheDocument();
+    expect(screen.getByText("Agent Console")).toBeInTheDocument();
+    expect(screen.getByText("Codex prepared the initial task graph.")).toBeInTheDocument();
+    expect(screen.getByText("Event Stream")).toBeInTheDocument();
+    expect(screen.getByText("run.created")).toBeInTheDocument();
+    expect(screen.getByText("$ codex exec --profile steerer \"split demo web loop\"")).toBeInTheDocument();
+    expect(
+      screen.getByText("command.output").compareDocumentPosition(screen.getByText("run.created")) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
   });
 
   it("records a backend-to-frontend contract from the UI", async () => {
@@ -153,5 +231,23 @@ describe("DragonBoat demo command board", () => {
 
     expect(await screen.findByText("GET /api/run returns crew, tasks, mailbox, and evidence arrays.")).toBeInTheDocument();
     expect(screen.getByText("contract_received")).toBeInTheDocument();
+  });
+
+  it("runs a simulated crew timeline from the UI", async () => {
+    const user = userEvent.setup();
+    const api = createFakeClient();
+
+    render(<App api={api} />);
+
+    await screen.findByText("Codex Steerer");
+    await user.click(screen.getByRole("button", { name: "Run simulated crew" }));
+
+    await waitFor(() => {
+      expect(api.runSimulatedCrew).toHaveBeenCalledOnce();
+    });
+
+    expect(await screen.findByText("Codex approved rower evidence and accepted the run.")).toBeInTheDocument();
+    expect(screen.getByText("Steerer review accepted")).toBeInTheDocument();
+    expect(screen.getByText("steerer.review.completed")).toBeInTheDocument();
   });
 });
